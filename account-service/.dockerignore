@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Docker
+docker-compose*.yml
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Documentation / extras
+README.md
+HELP.md
