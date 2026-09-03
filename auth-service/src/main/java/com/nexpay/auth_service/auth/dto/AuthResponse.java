@@ -1,5 +1,9 @@
 package com.nexpay.auth_service.auth.dto;
 
-public class AuthResponse {
-    
-}
+public record AuthResponse(
+
+        String accessToken,
+
+        String tokenType
+
+) {}
