@@ -9,25 +9,23 @@ import org.springframework.stereotype.Component;
 public class AccountMapper {
 
     public Account toEntity(AccountRequest request) {
-        Account entity = new Account();
 
-        entity.setCustomerId(request.customerId());
-        entity.setType(request.type());
-        
-        return entity;
+        return new Account(request.customerId(),
+                request.type());
+
     }
 
     public AccountResponse toResponse(Account entity) {
         return new AccountResponse(
-            entity.getId(),
-            entity.getCustomerId(),
-            entity.getAccountNumber(),
-            entity.getBalance(),
-            entity.getStatus(),
-            entity.getType(),
-            entity.getCreatedAt(),
-            entity.getUpdatedAt()
-                
+                entity.getId(),
+                entity.getCustomerId(),
+                entity.getAccountNumber(),
+                entity.getBalance(),
+                entity.getStatus(),
+                entity.getType(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
+
         );
     }
-} 
+}

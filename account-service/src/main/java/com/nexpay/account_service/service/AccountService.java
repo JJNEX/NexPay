@@ -30,30 +30,29 @@ public class AccountService implements InterfaceAccountService {
     private final AccountMapper mapper;
     private final AccountStatusValidator statusValidator;
 
-    private final String generateAccountNumber() {
+    private String generateAccountNumber() {
 
-    Long nextNumber = repository.getNextAccountNumber();
+        Long nextNumber = repository.getNextAccountNumber();
 
-    return String.format("%09d", nextNumber);
-}
-
-
+        return String.format("%09d", nextNumber);
+    }
 
     @Override
     @Transactional
     public AccountResponse create(AccountRequest request) {
 
-        boolean exists = repository.existsByCustomerIdAndType(request.customerId(), request.type());
+        boolean exists = repository.existsByCustomerIdAndType(
+                request.customerId(),
+                request.type());
 
-         if (exists) {
-        throw new AccountAlreadyExistsException(
-                "O cliente já possui uma conta do tipo "
-                        + request.type());
-    }
+        if (exists) {
+            throw new AccountAlreadyExistsException(
+                    "O cliente já possui uma conta do tipo " + request.type());
+        }
 
         Account account = mapper.toEntity(request);
 
-        account.setAccountNumber(generateAccountNumber());
+        account.assignAccountNumber(generateAccountNumber());
 
         Account saved = repository.save(account);
 
@@ -64,24 +63,21 @@ public class AccountService implements InterfaceAccountService {
     public AccountResponse findById(UUID id) {
 
         Account account = repository.findById(id)
-                .orElseThrow(() ->
-                        new AccountNotFoundException(
-                         "Conta não encontrada para o número: " + id));
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Conta não encontrada para o número: " + id));
 
         return mapper.toResponse(account);
     }
 
     @Override
-public AccountResponse findByAccountNumber(String accountNumber) {
+    public AccountResponse findByAccountNumber(String accountNumber) {
 
-    Account account = repository.findByAccountNumber(accountNumber)
-            .orElseThrow(() ->
-                    new AccountNotFoundException(
-                            "Conta não encontrada para o número: " + accountNumber));
+        Account account = repository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Conta não encontrada para o número: " + accountNumber));
 
-    return mapper.toResponse(account);
-}
-    
+        return mapper.toResponse(account);
+    }
 
     @Override
     public List<AccountResponse> findByCustomerId(UUID customerId) {
@@ -106,64 +102,59 @@ public AccountResponse findByAccountNumber(String accountNumber) {
 
         return repository.findAll(pageable)
                 .map(mapper::toResponse);
-                
+
     }
 
     @Override
     public Page<AccountResponse> findByStatus(AccountStatus status, Pageable pageable) {
-        
+
         return repository.findByStatus(status, pageable)
-        .map(mapper::toResponse);
+                .map(mapper::toResponse);
     }
 
+    @Transactional
+    public AccountResponse changeStatus(UUID id, AccountStatus newStatus) {
 
-@Transactional
-public AccountResponse changeStatus(UUID id, AccountStatus newStatus) {
+        Account account = repository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Conta não encontrada: " + id));
 
-    Account account = repository.findById(id)
-            .orElseThrow(() ->
-                    new AccountNotFoundException(
-                            "Conta não encontrada: " + id));
+        statusValidator.validate(
+                account.getStatus(),
+                newStatus);
 
-    statusValidator.validate(
-            account.getStatus(),
-            newStatus
-    );
+        account.changeStatus(newStatus);
 
-    account.setStatus(newStatus);
+        Account saved = repository.save(account);
 
-    Account saved = repository.save(account);
-
-    return mapper.toResponse(saved);
-}
-
-@Override
-public AccountResponse activateAccount(UUID id) {
-    return changeStatus(id, AccountStatus.ACTIVE);
-}
-
-@Override
-public AccountResponse blockAccount(UUID id) {
-    
-    return changeStatus(id, AccountStatus.BLOCKED);
-}
-
-@Override
-@Transactional
-public AccountResponse closeAccount(UUID id) {
-
-    Account account = repository.findById(id)
-            .orElseThrow(() ->
-                    new AccountNotFoundException(
-                            "Conta não encontrada: " + id));
-
-    if (account.getBalance().compareTo(BigDecimal.ZERO) != 0) {
-        throw new InvalidAccountStateException(
-                "A conta deve estar com saldo zerado para ser encerrada.");
+        return mapper.toResponse(saved);
     }
 
-    return changeStatus(id, AccountStatus.CLOSED);
-}
+    @Override
+    public AccountResponse activateAccount(UUID id) {
+        return changeStatus(id, AccountStatus.ACTIVE);
+    }
 
+    @Override
+    public AccountResponse blockAccount(UUID id) {
+
+        return changeStatus(id, AccountStatus.BLOCKED);
+    }
+
+    @Override
+    @Transactional
+    public AccountResponse closeAccount(UUID id) {
+
+        Account account = repository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Conta não encontrada: " + id));
+
+        if (account.getBalance().compareTo(BigDecimal.ZERO) != 0) {
+            throw new InvalidAccountStateException(
+                    "A conta deve estar com saldo zerado para ser encerrada.");
+        }
+
+        return changeStatus(id, AccountStatus.CLOSED);
+    }
 
 }

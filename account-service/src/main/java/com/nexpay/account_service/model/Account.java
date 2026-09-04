@@ -16,14 +16,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
-@Setter
-@NoArgsConstructor
+@Setter(AccessLevel.PRIVATE)
 @Table(name = "accounts")
 public class Account {
 
@@ -58,4 +57,23 @@ public class Account {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    protected Account() {
+    }
+
+    public Account(UUID customerId, AccountType type) {
+        this.customerId = customerId;
+        this.type = type;
+        this.balance = BigDecimal.ZERO;
+        this.status = AccountStatus.ACTIVE;
+    }
+
+    public void assignAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public void changeStatus(AccountStatus status) {
+        this.status = status;
+    }
+
 }

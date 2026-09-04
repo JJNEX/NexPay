@@ -1,347 +1,341 @@
 package com.nexpay.account_service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-import java.math.BigDecimal;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.junit.jupiter.api.Test;
-
 import com.nexpay.account_service.dto.AccountRequest;
 import com.nexpay.account_service.dto.AccountResponse;
 import com.nexpay.account_service.exception.AccountAlreadyExistsException;
 import com.nexpay.account_service.exception.AccountNotFoundException;
-import com.nexpay.account_service.exception.InvalidAccountStateException;
 import com.nexpay.account_service.mapper.AccountMapper;
 import com.nexpay.account_service.model.Account;
 import com.nexpay.account_service.model.AccountStatus;
 import com.nexpay.account_service.model.AccountStatusValidator;
+import com.nexpay.account_service.model.AccountType;
 import com.nexpay.account_service.repository.AccountRepository;
 import com.nexpay.account_service.service.AccountService;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
 
-    @Mock
-    private AccountRepository repository;
+        @Mock
+        private AccountRepository repository;
 
-    @Mock
-    private AccountMapper mapper;
+        @Mock
+        private AccountMapper mapper;
 
-    @Mock
-    private AccountStatusValidator statusValidator;
+        @Mock
+        private AccountStatusValidator statusValidator;
 
-    @InjectMocks
-    private AccountService service;
+        @InjectMocks
+        private AccountService service;
 
-    @Test
-void shouldCreateAccountSuccessfully() {
+        @Test
+        void shouldCreateAccountSuccessfully() {
 
-    UUID customerId = UUID.randomUUID();
+                UUID customerId = UUID.randomUUID();
 
-    AccountRequest request = mock(AccountRequest.class);
+                AccountRequest request = mock(AccountRequest.class);
 
-    Account account = new Account();
+                Account account = new Account(
+                                customerId,
+                                AccountType.CHECKING);
 
-    AccountResponse response = mock(AccountResponse.class);
+                AccountResponse response = mock(AccountResponse.class);
 
-    when(request.customerId())
-            .thenReturn(customerId);
+                when(request.customerId())
+                                .thenReturn(customerId);
 
-    when(repository.existsByCustomerIdAndType(
-            any(),
-            any()))
-            .thenReturn(false);
+                when(request.type())
+                                .thenReturn(AccountType.CHECKING);
 
-    when(repository.getNextAccountNumber())
-            .thenReturn(1L);
+                when(repository.existsByCustomerIdAndType(
+                                customerId,
+                                AccountType.CHECKING))
+                                .thenReturn(false);
 
-    when(mapper.toEntity(request))
-            .thenReturn(account);
+                when(repository.getNextAccountNumber())
+                                .thenReturn(1L);
 
-    when(repository.save(account))
-            .thenReturn(account);
+                when(mapper.toEntity(request))
+                                .thenReturn(account);
 
-    when(mapper.toResponse(account))
-            .thenReturn(response);
+                when(repository.save(account))
+                                .thenReturn(account);
 
-    AccountResponse result = service.create(request);
+                when(mapper.toResponse(account))
+                                .thenReturn(response);
 
-    assertNotNull(result);
+                AccountResponse result = service.create(request);
 
-    assertEquals(
-            "000000001",
-            account.getAccountNumber()
-    );
+                assertNotNull(result);
 
-    verify(repository)
-            .existsByCustomerIdAndType(
-                    any(),
-                    any()
-            );
+                assertEquals(
+                                "000000001",
+                                account.getAccountNumber());
 
-    verify(repository)
-            .getNextAccountNumber();
+                verify(repository)
+                                .existsByCustomerIdAndType(
+                                                customerId,
+                                                AccountType.CHECKING);
 
-    verify(repository)
-            .save(account);
+                verify(repository)
+                                .getNextAccountNumber();
 
-    verify(mapper)
-            .toEntity(request);
+                verify(repository)
+                                .save(account);
 
-    verify(mapper)
-            .toResponse(account);
-}
+                verify(mapper)
+                                .toEntity(request);
 
-    @Test
-    void shouldThrowExceptionWhenCustomerAlreadyHasAccountType() {
+                verify(mapper)
+                                .toResponse(account);
+        }
 
-        AccountRequest request = mock(AccountRequest.class);
+        @Test
+        void shouldFindAccountById() {
 
-        UUID customerId = UUID.randomUUID();
+                UUID id = UUID.randomUUID();
 
-        when(request.customerId()).thenReturn(customerId);
+                Account account = new Account(
+                                UUID.randomUUID(),
+                                AccountType.CHECKING);
 
-        when(repository.existsByCustomerIdAndType(
-                any(),
-                any()))
-                .thenReturn(true);
+                AccountResponse response = mock(AccountResponse.class);
 
-        assertThrows(
-                AccountAlreadyExistsException.class,
-                () -> service.create(request)
-        );
+                when(repository.findById(id))
+                                .thenReturn(Optional.of(account));
 
-        verify(repository, never()).save(any());
-    }
+                when(mapper.toResponse(account))
+                                .thenReturn(response);
 
-    @Test
-    void shouldFindAccountById() {
+                AccountResponse result = service.findById(id);
 
-        UUID id = UUID.randomUUID();
+                assertNotNull(result);
 
-        Account account = new Account();
-        account.setId(id);
+                verify(repository)
+                                .findById(id);
 
-        AccountResponse response = mock(AccountResponse.class);
+                verify(mapper)
+                                .toResponse(account);
+        }
 
-        when(repository.findById(id))
-                .thenReturn(Optional.of(account));
+        @Test
+        void shouldThrowExceptionWhenAccountNotFoundById() {
 
-        when(mapper.toResponse(account))
-                .thenReturn(response);
+                UUID id = UUID.randomUUID();
 
-        AccountResponse result = service.findById(id);
+                when(repository.findById(id))
+                                .thenReturn(Optional.empty());
 
-        assertNotNull(result);
+                assertThrows(
+                                AccountNotFoundException.class,
+                                () -> service.findById(id));
+        }
 
-        verify(repository).findById(id);
-        verify(mapper).toResponse(account);
-    }
+        @Test
+        void shouldFindAccountByAccountNumber() {
 
-    @Test
-    void shouldThrowExceptionWhenAccountNotFoundById() {
+                String accountNumber = "000000001";
 
-        UUID id = UUID.randomUUID();
+                Account account = new Account(
+                                UUID.randomUUID(),
+                                AccountType.CHECKING);
 
-        when(repository.findById(id))
-                .thenReturn(Optional.empty());
+                AccountResponse response = mock(AccountResponse.class);
 
-        assertThrows(
-                AccountNotFoundException.class,
-                () -> service.findById(id)
-        );
-    }
+                when(repository.findByAccountNumber(accountNumber))
+                                .thenReturn(Optional.of(account));
 
-    @Test
-    void shouldFindAccountByAccountNumber() {
+                when(mapper.toResponse(account))
+                                .thenReturn(response);
 
-        String accountNumber = "000000001";
+                AccountResponse result = service.findByAccountNumber(accountNumber);
 
-        Account account = new Account();
+                assertNotNull(result);
 
-        AccountResponse response = mock(AccountResponse.class);
+                verify(repository)
+                                .findByAccountNumber(accountNumber);
 
-        when(repository.findByAccountNumber(accountNumber))
-                .thenReturn(Optional.of(account));
+                verify(mapper)
+                                .toResponse(account);
+        }
 
-        when(mapper.toResponse(account))
-                .thenReturn(response);
+        @Test
+        void shouldChangeStatusSuccessfully() {
 
-        AccountResponse result =
-                service.findByAccountNumber(accountNumber);
+                UUID id = UUID.randomUUID();
 
-        assertNotNull(result);
+                Account account = new Account(
+                                UUID.randomUUID(),
+                                AccountType.CHECKING);
 
-        verify(repository)
-                .findByAccountNumber(accountNumber);
-    }
+                AccountResponse response = mock(AccountResponse.class);
 
-    @Test
-    void shouldChangeStatusSuccessfully() {
+                when(repository.findById(id))
+                                .thenReturn(Optional.of(account));
 
-        UUID id = UUID.randomUUID();
+                when(repository.save(account))
+                                .thenReturn(account);
 
-        Account account = new Account();
-        account.setStatus(AccountStatus.ACTIVE);
+                when(mapper.toResponse(account))
+                                .thenReturn(response);
 
-        AccountResponse response = mock(AccountResponse.class);
+                AccountResponse result = service.changeStatus(
+                                id,
+                                AccountStatus.BLOCKED);
 
-        when(repository.findById(id))
-                .thenReturn(Optional.of(account));
+                assertNotNull(result);
 
-        when(repository.save(account))
-                .thenReturn(account);
+                assertEquals(
+                                AccountStatus.BLOCKED,
+                                account.getStatus());
 
-        when(mapper.toResponse(account))
-                .thenReturn(response);
+                verify(statusValidator)
+                                .validate(
+                                                AccountStatus.ACTIVE,
+                                                AccountStatus.BLOCKED);
 
-        AccountResponse result =
-                service.changeStatus(
-                        id,
-                        AccountStatus.BLOCKED
-                );
+                verify(repository)
+                                .save(account);
+        }
 
-        assertNotNull(result);
+        @Test
+        void shouldActivateAccount() {
 
-        assertEquals(
-                AccountStatus.BLOCKED,
-                account.getStatus()
-        );
+                UUID id = UUID.randomUUID();
 
-        verify(statusValidator)
-                .validate(
-                        AccountStatus.ACTIVE,
-                        AccountStatus.BLOCKED
-                );
+                Account account = new Account(
+                                UUID.randomUUID(),
+                                AccountType.CHECKING);
 
-        verify(repository).save(account);
-    }
+                account.changeStatus(AccountStatus.BLOCKED);
 
-    @Test
-    void shouldActivateAccount() {
+                AccountResponse response = mock(AccountResponse.class);
 
-        UUID id = UUID.randomUUID();
+                when(repository.findById(id))
+                                .thenReturn(Optional.of(account));
 
-        Account account = new Account();
-        account.setStatus(AccountStatus.BLOCKED);
+                when(repository.save(account))
+                                .thenReturn(account);
 
-        AccountResponse response = mock(AccountResponse.class);
+                when(mapper.toResponse(account))
+                                .thenReturn(response);
 
-        when(repository.findById(id))
-                .thenReturn(Optional.of(account));
+                service.activateAccount(id);
 
-        when(repository.save(account))
-                .thenReturn(account);
+                assertEquals(
+                                AccountStatus.ACTIVE,
+                                account.getStatus());
+        }
 
-        when(mapper.toResponse(account))
-                .thenReturn(response);
+        @Test
+        void shouldBlockAccount() {
 
-        service.activateAccount(id);
+                UUID id = UUID.randomUUID();
 
-        assertEquals(
-                AccountStatus.ACTIVE,
-                account.getStatus()
-        );
-    }
+                Account account = new Account(
+                                UUID.randomUUID(),
+                                AccountType.CHECKING);
 
-    @Test
-    void shouldBlockAccount() {
+                AccountResponse response = mock(AccountResponse.class);
 
-        UUID id = UUID.randomUUID();
+                when(repository.findById(id))
+                                .thenReturn(Optional.of(account));
 
-        Account account = new Account();
-        account.setStatus(AccountStatus.ACTIVE);
+                when(repository.save(account))
+                                .thenReturn(account);
 
-        AccountResponse response = mock(AccountResponse.class);
+                when(mapper.toResponse(account))
+                                .thenReturn(response);
 
-        when(repository.findById(id))
-                .thenReturn(Optional.of(account));
+                service.blockAccount(id);
 
-        when(repository.save(account))
-                .thenReturn(account);
+                assertEquals(
+                                AccountStatus.BLOCKED,
+                                account.getStatus());
+        }
 
-        when(mapper.toResponse(account))
-                .thenReturn(response);
+        @Test
+        void shouldCloseAccountWhenBalanceIsZero() {
 
-        service.blockAccount(id);
+                UUID id = UUID.randomUUID();
 
-        assertEquals(
-                AccountStatus.BLOCKED,
-                account.getStatus()
-        );
-    }
+                Account account = new Account(
+                                UUID.randomUUID(),
+                                AccountType.CHECKING);
 
-    @Test
-    void shouldCloseAccountWhenBalanceIsZero() {
+                account.changeStatus(AccountStatus.BLOCKED);
 
-        UUID id = UUID.randomUUID();
+                AccountResponse response = mock(AccountResponse.class);
 
-        Account account = new Account();
+                when(repository.findById(id))
+                                .thenReturn(Optional.of(account));
 
-        account.setStatus(AccountStatus.BLOCKED);
-        account.setBalance(BigDecimal.ZERO);
+                when(repository.save(account))
+                                .thenReturn(account);
 
-        AccountResponse response = mock(AccountResponse.class);
+                when(mapper.toResponse(account))
+                                .thenReturn(response);
 
-        when(repository.findById(id))
-                .thenReturn(Optional.of(account));
+                service.closeAccount(id);
 
-        when(repository.save(account))
-                .thenReturn(account);
+                assertEquals(
+                                AccountStatus.CLOSED,
+                                account.getStatus());
+        }
 
-        when(mapper.toResponse(account))
-                .thenReturn(response);
+        @Test
+        void shouldThrowExceptionWhenClosingAccountNotFound() {
 
-        service.closeAccount(id);
+                UUID id = UUID.randomUUID();
 
-        assertEquals(
-                AccountStatus.CLOSED,
-                account.getStatus()
-        );
-    }
+                when(repository.findById(id))
+                                .thenReturn(Optional.empty());
 
-    @Test
-    void shouldThrowExceptionWhenClosingAccountWithBalance() {
+                assertThrows(
+                                AccountNotFoundException.class,
+                                () -> service.closeAccount(id));
+        }
 
-        UUID id = UUID.randomUUID();
+        @Test
+        void shouldThrowExceptionWhenCustomerAlreadyHasAccountType() {
 
-        Account account = new Account();
+                AccountRequest request = mock(AccountRequest.class);
 
-        account.setStatus(AccountStatus.BLOCKED);
-        account.setBalance(new BigDecimal("100.00"));
+                UUID customerId = UUID.randomUUID();
 
-        when(repository.findById(id))
-                .thenReturn(Optional.of(account));
+                when(request.customerId())
+                                .thenReturn(customerId);
 
-        assertThrows(
-                InvalidAccountStateException.class,
-                () -> service.closeAccount(id)
-        );
+                when(request.type())
+                                .thenReturn(AccountType.CHECKING);
 
-        verify(repository, never())
-                .save(any());
-    }
+                when(repository.existsByCustomerIdAndType(
+                                customerId,
+                                AccountType.CHECKING))
+                                .thenReturn(true);
 
-    @Test
-    void shouldThrowExceptionWhenClosingAccountNotFound() {
+                assertThrows(
+                                AccountAlreadyExistsException.class,
+                                () -> service.create(request));
 
-        UUID id = UUID.randomUUID();
-
-        when(repository.findById(id))
-                .thenReturn(Optional.empty());
-
-        assertThrows(
-                AccountNotFoundException.class,
-                () -> service.closeAccount(id)
-        );
-    }
+                verify(repository, never())
+                                .save(any());
+        }
 }
