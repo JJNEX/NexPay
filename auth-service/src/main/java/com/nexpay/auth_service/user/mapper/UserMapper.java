@@ -12,16 +12,11 @@ public class UserMapper {
 
     public User toEntity(RegisterRequest request) {
 
-        User user = new User();
-
-        user.setName(request.name());
-        user.setCpf(request.cpf());
-        user.setEmail(request.email());
-        user.setPassword(request.password());
-        user.setRole(Role.CUSTOMER);
-        user.setActive(true);
-
-        return user;
+        return new User(
+                request.name(),
+                request.cpf(),
+                request.email(),
+                request.password());
     }
 
     public UserResponse toResponse(User user) {
@@ -35,7 +30,7 @@ public class UserMapper {
                 user.getLastLogin(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
-                user.getRole()
-        );
+                user.getRole());
     }
 }
+
