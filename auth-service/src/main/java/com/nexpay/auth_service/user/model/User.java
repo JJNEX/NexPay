@@ -62,4 +62,17 @@ public User(
     this.role = Role.CUSTOMER;
     this.active = true;
 }
+
+public void activate() {
+    this.active = true;
+}
+
+public void deactivate() {
+    this.active = false;
+}
+
+public void updateProfile(String name, String email) {
+    this.name = name;
+    this.email = email;
+}
 }
