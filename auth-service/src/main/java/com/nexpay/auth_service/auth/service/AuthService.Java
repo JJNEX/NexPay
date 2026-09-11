@@ -2,6 +2,8 @@ package com.nexpay.auth_service.auth.service;
 
 import java.util.UUID;
 
+import org.springframework.stereotype.Service;
+
 import com.nexpay.auth_service.auth.dto.AuthResponse;
 import com.nexpay.auth_service.auth.dto.ChangePasswordRequest;
 import com.nexpay.auth_service.auth.dto.ForgotPasswordRequest;
@@ -10,6 +12,7 @@ import com.nexpay.auth_service.auth.dto.MessageResponse;
 import com.nexpay.auth_service.auth.dto.RegisterRequest;
 import com.nexpay.auth_service.auth.dto.ResetPasswordRequest;
 
+@Service
 public class AuthService implements InterfaceAuthService{
 
     @Override

@@ -13,3 +13,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8082}
+
+  logging:
+  level:
+    org.springframework.security: DEBUG
