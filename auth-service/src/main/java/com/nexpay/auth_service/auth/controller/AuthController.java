@@ -28,8 +28,6 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(
             @RequestBody RegisterRequest request) {
 
-                System.out.println(">>> CHEGOU NO AUTH CONTROLLER <<<");
-
         AuthResponse response = authService.register(request);
 
         return ResponseEntity
