@@ -9,13 +9,13 @@ import com.nexpay.auth_service.user.model.User;
 @Component
 public class UserMapper {
 
-    public User toEntity(RegisterRequest request) {
+    public User toEntity(RegisterRequest request, String encodedPassword) {
 
         return new User(
                 request.name(),
                 request.cpf(),
                 request.email(),
-                request.password());
+                encodedPassword);
     }
 
     public UserResponse toResponse(User user) {
