@@ -12,6 +12,7 @@ import com.nexpay.auth_service.auth.dto.LoginRequest;
 import com.nexpay.auth_service.auth.dto.MessageResponse;
 import com.nexpay.auth_service.auth.dto.RegisterRequest;
 import com.nexpay.auth_service.auth.dto.ResetPasswordRequest;
+import com.nexpay.auth_service.security.JwtService;
 import com.nexpay.auth_service.user.mapper.UserMapper;
 import com.nexpay.auth_service.user.model.User;
 import com.nexpay.auth_service.user.repository.UserRepository;
@@ -25,6 +26,7 @@ public class AuthService implements InterfaceAuthService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -45,8 +47,10 @@ public class AuthService implements InterfaceAuthService {
 
         userRepository.save(user);
 
+        String token = jwtService.generateToken(user);
+
         return new AuthResponse(
-                null,
+                token,
                 "Bearer"
         );
     }
