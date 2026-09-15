@@ -71,6 +71,10 @@ public void deactivate() {
     this.active = false;
 }
 
+public void registerLogin() {
+    this.lastLogin = LocalDateTime.now();
+}
+
 public void updateProfile(String name, String email) {
     this.name = name;
     this.email = email;

@@ -56,9 +56,35 @@ public class AuthService implements InterfaceAuthService {
     }
 
     @Override
-    public AuthResponse login(LoginRequest request) {
-        throw new UnsupportedOperationException("Unimplemented method 'login'");
+public AuthResponse login(LoginRequest request) {
+
+    User user = userRepository
+            .findByEmailIgnoreCase(request.email())
+            .orElseThrow(() ->
+                    new IllegalArgumentException("Email ou senha inválidos"));
+
+    if (!user.getActive()) {
+        throw new IllegalArgumentException("Usuário está inativo");
     }
+
+    if (!passwordEncoder.matches(
+            request.password(),
+            user.getPassword())) {
+
+        throw new IllegalArgumentException("Email ou senha inválidos");
+    }
+
+    user.registerLogin();
+
+    userRepository.save(user);
+
+    String token = jwtService.generateToken(user);
+
+    return new AuthResponse(
+            token,
+            "Bearer"
+    );
+}
 
     @Override
     public MessageResponse changePassword(
